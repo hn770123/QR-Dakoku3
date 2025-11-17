@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4CAF50">
+    <title>QR出退勤システム</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* 全体のスタイル設定 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* ヘッダーエリア */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        /* ボタンエリア */
+        .button-area {
+            padding: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button {
+            flex: 1;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #clockInBtn {
+            background: linear-gradient(135deg, #56CCF2 0%, #2F80ED 100%);
+            color: white;
+        }
+
+        #clockOutBtn {
+            background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);
+            color: white;
+        }
+
+        /* QRコード表示エリア */
+        .qr-area {
+            padding: 30px;
+            text-align: center;
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #qrcode {
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        #qrStatus {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .qr-timer {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #999;
+        }
+
+        /* スペーサー */
+        .spacer {
+            height: 100px;
+        }
+
+        /* ログエリア */
+        .log-area {
+            padding: 30px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .log-area h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        #logDisplay {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            color: #495057;
+        }
+
+        .log-entry.error {
+            color: #dc3545;
+        }
+
+        .log-entry.success {
+            color: #28a745;
+        }
+
+        /* 設定エリア */
+        .settings-area {
+            padding: 30px;
+            background: #ffffff;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .settings-area h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #saveSettingsBtn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            font-size: 16px;
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 480px) {
+            .button-area {
+                flex-direction: column;
+            }
+            
+            .container {
+                border-radius: 0;
+            }
+            
+            body {
+                padding: 0;
+            }
+        }
+
+        /* ローディングアニメーション */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ヒドゥンクラス */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <div class="header">
+            <h1>📱 QR出退勤システム</h1>
+            <p>ボタンをタップしてQRコードを表示</p>
+        </div>
+
+        <!-- ボタンエリア -->
+        <div class="button-area">
+            <button id="clockInBtn">🌅 出勤</button>
+            <button id="clockOutBtn">🌙 退勤</button>
+        </div>
+
+        <!-- QRコード表示エリア -->
+        <div class="qr-area">
+            <div id="qrcode"></div>
+            <div id="qrStatus">ボタンをタップしてQRコードを生成</div>
+            <div class="qr-timer" id="qrTimer"></div>
+        </div>
+
+        <!-- スペーサー -->
+        <div class="spacer"></div>
+
+        <!-- ログ表示エリア -->
+        <div class="log-area">
+            <h2>📋 操作ログ</h2>
+            <div id="logDisplay">
+                <div class="log-entry">システム起動しました</div>
+            </div>
+        </div>
+
+        <!-- 設定エリア -->
+        <div class="settings-area">
+            <h2>⚙️ 設定</h2>
+            <div class="form-group">
+                <label for="deviceId">デバイスID</label>
+                <input type="text" id="deviceId" placeholder="例: DEVICE001">
+            </div>
+            <div class="form-group">
+                <label for="passcode">パスコード</label>
+                <input type="password" id="passcode" placeholder="パスコードを入力">
+            </div>
+            <div class="form-group">
+                <label for="serverUrl">サーバーURL</label>
+                <input type="url" id="serverUrl" placeholder="https://example.com/record">
+            </div>
+            <button id="saveSettingsBtn">💾 設定を保存</button>
+        </div>
+    </div>
+
+    <!-- QRコード生成ライブラリ（CDN） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- JWT生成用のライブラリ（jose - ブラウザ対応） -->
+    <script type="module" src="qr-generator.js"></script>
+    
+    <script>
+        // Service Worker登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
