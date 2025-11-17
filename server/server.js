@@ -16,6 +16,35 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// レート制限の設定（簡易実装）
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1分
+const RATE_LIMIT_MAX_REQUESTS = 10; // 1分あたり10リクエスト
+
+/**
+ * シンプルなレート制限ミドルウェア
+ */
+function rateLimit(req, res, next) {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    
+    if (!rateLimitMap.has(ip)) {
+        rateLimitMap.set(ip, []);
+    }
+    
+    const requests = rateLimitMap.get(ip);
+    // 古いリクエストを削除
+    const recentRequests = requests.filter(timestamp => now - timestamp < RATE_LIMIT_WINDOW);
+    
+    if (recentRequests.length >= RATE_LIMIT_MAX_REQUESTS) {
+        return res.status(429).send('Too many requests. Please try again later.');
+    }
+    
+    recentRequests.push(now);
+    rateLimitMap.set(ip, recentRequests);
+    next();
+}
+
 // ミドルウェアの設定
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -115,8 +144,9 @@ async function verifyToken(token, passcode) {
 
 /**
  * メインページ - 出退勤記録を受け付ける
+ * レート制限を適用
  */
-app.get('/record', async (req, res) => {
+app.get('/record', rateLimit, async (req, res) => {
     const token = req.query.token;
     const userId = req.cookies.userId;
     
@@ -239,8 +269,13 @@ app.post('/register', (req, res) => {
     };
     saveUsers(users);
     
-    // Cookieを設定
-    res.cookie('userId', userId, { maxAge: 365 * 24 * 60 * 60 * 1000 }); // 1年間有効
+    // Cookieを設定（セキュアフラグ付き）
+    res.cookie('userId', userId, { 
+        maxAge: 365 * 24 * 60 * 60 * 1000, // 1年間有効
+        httpOnly: true, // JavaScriptからアクセス不可
+        secure: process.env.NODE_ENV === 'production', // 本番環境ではHTTPSのみ
+        sameSite: 'lax' // CSRF対策
+    });
     
     // トークン付きでリダイレクト
     res.json({ success: true, redirectUrl: `/record?token=${token}` });

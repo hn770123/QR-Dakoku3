@@ -289,7 +289,13 @@
     </div>
 
     <!-- QRコード生成ライブラリ（CDN） -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- 
+        注意: integrity属性を追加することでセキュリティを強化できます。
+        本番環境では、ライブラリをローカルにダウンロードして使用することを推奨します。
+    -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" 
+            crossorigin="anonymous" 
+            referrerpolicy="no-referrer"></script>
     <!-- JWT生成用のライブラリ（jose - ブラウザ対応） -->
     <script type="module" src="qr-generator.js"></script>
     
