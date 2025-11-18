@@ -156,6 +156,11 @@ async function displayQRCode(action) {
         document.getElementById('qrStatus').textContent = `${statusText}のQRコードを表示中`;
         document.getElementById('qrStatus').style.color = colorDark;
         
+        // URL表示
+        const qrUrlDisplay = document.getElementById('qrUrlDisplay');
+        qrUrlDisplay.innerHTML = `<a href="${qrUrl}" target="_blank" rel="noopener noreferrer">${qrUrl}</a>`;
+        qrUrlDisplay.style.display = 'block';
+        
         addLog(`${statusText}のQRコードを生成しました`, 'success');
         
         // タイマー開始
@@ -221,6 +226,11 @@ function clearQRCode() {
     document.getElementById('qrStatus').textContent = 'ボタンをタップしてQRコードを生成';
     document.getElementById('qrStatus').style.color = '#666';
     document.getElementById('qrTimer').textContent = '';
+    
+    // URL表示をクリア
+    const qrUrlDisplay = document.getElementById('qrUrlDisplay');
+    qrUrlDisplay.innerHTML = '';
+    qrUrlDisplay.style.display = 'none';
 }
 
 /**
